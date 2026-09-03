@@ -1,7 +1,11 @@
+import os
 import unittest
 from datetime import datetime, timezone, timedelta
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
-from spider.main import crawl, interval_minutes, run_scheduled
+from spider.main import crawl, interval_minutes, load_repository_environment, run_scheduled
 
 
 FIXTURE = """
@@ -46,6 +50,30 @@ class SchedulerTests(unittest.TestCase):
     def test_negative_interval_is_rejected(self) -> None:
         with self.assertRaises(Exception):
             interval_minutes("-1")
+
+
+class EnvironmentLoadingTests(unittest.TestCase):
+    def test_loads_database_url_from_repository_dotenv_when_not_in_environment(self) -> None:
+        with TemporaryDirectory() as temporary_directory:
+            dotenv_path = Path(temporary_directory) / ".env"
+            dotenv_path.write_text("# local configuration\nDATABASE_URL=postgresql://dotenv.example/test\n", encoding="utf-8")
+
+            with patch.dict("os.environ", {}, clear=True):
+                load_repository_environment(dotenv_path)
+                actual = os.environ["DATABASE_URL"]
+
+            self.assertEqual(actual, "postgresql://dotenv.example/test")
+
+    def test_preserves_database_url_already_set_in_environment(self) -> None:
+        with TemporaryDirectory() as temporary_directory:
+            dotenv_path = Path(temporary_directory) / ".env"
+            dotenv_path.write_text("DATABASE_URL=postgresql://dotenv.example/test\n", encoding="utf-8")
+
+            with patch.dict("os.environ", {"DATABASE_URL": "postgresql://environment.example/test"}, clear=True):
+                load_repository_environment(dotenv_path)
+                actual = os.environ["DATABASE_URL"]
+
+            self.assertEqual(actual, "postgresql://environment.example/test")
 
 
 

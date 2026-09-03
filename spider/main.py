@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from datetime import datetime
@@ -20,6 +21,24 @@ from spider.database import DatabaseRepository
 DEFAULT_URL = "https://www.dd373.com/s-aj0khw-0-1bcwm5-8rg681-0-0-tf85vg-0-0-0-0-0-1-0-0-1.html"
 DEFAULT_OUTPUT = Path("spider/output/results.json")
 SHANGHAI = ZoneInfo("Asia/Shanghai")
+
+
+def load_repository_environment(dotenv_path: Optional[Path] = None) -> None:
+    """Load DATABASE_URL from the repository .env without overriding the environment."""
+    path = dotenv_path or Path(__file__).resolve().parents[1] / ".env"
+    if "DATABASE_URL" in os.environ or not path.is_file():
+        return
+
+    for line in path.read_text(encoding="utf-8").splitlines():
+        key, separator, value = line.strip().partition("=")
+        if key != "DATABASE_URL" or not separator:
+            continue
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+            value = value[1:-1]
+        if value:
+            os.environ["DATABASE_URL"] = value
+        return
 
 
 def interval_minutes(value: str) -> float:
@@ -79,6 +98,7 @@ def build_argument_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = build_argument_parser().parse_args()
+    load_repository_environment()
     repository = DatabaseRepository.from_environment()
     def run_once():
         started_at = datetime.now(SHANGHAI)

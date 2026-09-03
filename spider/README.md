@@ -33,9 +33,32 @@ python3 -m pip install -r requirements.txt
 
 `requirements.txt` 中包含 PostgreSQL 驱动 `psycopg`。如果不使用虚拟环境，也可以直接执行最后一条安装命令。
 
+## 构建验证
+
+Python 无需传统的编译步骤。安装依赖后，可使用以下命令完成依赖安装和语法检查，作为构建验证：
+
+```bash
+python3 -m pip install -r requirements.txt
+python3 -m compileall spider
+```
+
+也可以运行完整单元测试：
+
+```bash
+python3 -m unittest discover -s spider/tests -v
+```
+
 ## 配置数据库
 
-程序从环境变量 `DATABASE_URL` 读取 PostgreSQL 连接地址。请在当前终端中设置该变量；不要把包含密码的连接地址提交到 Git 仓库。
+程序启动时会从仓库根目录的 `.env` 文件读取 PostgreSQL 连接地址。创建 `.env` 并设置 `DATABASE_URL`：
+
+```bash
+DATABASE_URL='postgresql://<用户名>:<密码>@<主机>:<端口>/<数据库名>'
+```
+
+不要把包含密码的连接地址写入 README、源代码或测试输出。若系统环境变量已经设置 `DATABASE_URL`，程序会保留该值，它优先于 `.env` 文件中的值。
+
+如需临时覆盖 `.env`，可在运行前设置系统环境变量：
 
 ```bash
 export DATABASE_URL='postgresql://<用户名>:<密码>@<主机>:<端口>/<数据库名>'
@@ -147,12 +170,16 @@ tar -xzf dd373-gold-price-spider.tar.gz
 python3 -m venv .venv
 source .venv/bin/activate
 python3 -m pip install -r requirements.txt
-export DATABASE_URL='postgresql://<用户名>:<密码>@<主机>:<端口>/<数据库名>'
+python3 -m compileall spider
+# 在仓库根目录创建 .env，并写入 DATABASE_URL=...
+set -a
+. ./.env
+set +a
 psql "$DATABASE_URL" -f spider/sql/create_tables.sql
 python3 -m spider.main --interval-minutes 10
 ```
 
-若目标数据库已按同一脚本建表，可跳过 `psql` 命令。
+压缩包不包含 `.env`，应在目标机器上单独创建。若目标数据库已按同一脚本建表，可跳过 `psql` 命令及其前面的临时环境变量导入步骤。
 
 ## 故障排查
 
