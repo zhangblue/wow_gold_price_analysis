@@ -1,1 +1,4 @@
 .worktrees/
+spider/.DS_Store
+spider/output
+.DS_Store
