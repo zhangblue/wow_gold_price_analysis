@@ -56,6 +56,20 @@ test('clears a successful summary when a later query has invalid dates', async (
   expect(screen.queryByText('最新价格：0.0142')).not.toBeInTheDocument();
 });
 
+test('clears a successful summary when a later query omits a date', async () => {
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole('button', { name: '查询价格' }));
+  expect(await screen.findByText('最新价格：0.0142')).toBeInTheDocument();
+
+  await user.clear(screen.getByLabelText('开始日期'));
+  await user.click(screen.getByRole('button', { name: '查询价格' }));
+
+  expect(await screen.findByText('请选择开始日期和结束日期')).toBeInTheDocument();
+  expect(screen.queryByText('最新价格：0.0142')).not.toBeInTheDocument();
+});
+
 test('shows an empty-state message when a query returns no prices', async () => {
   const user = userEvent.setup();
   render(<App />);
