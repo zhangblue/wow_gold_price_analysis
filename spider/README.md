@@ -14,6 +14,14 @@ python3 -m pip install -r requirements.txt
 
 在首次运行数据库持久化版本前，由部署者手动执行 [create_tables.sql](sql/create_tables.sql) 创建 `crawl_runs` 和 `gold_price_records`。爬虫自身不会执行建表、迁移或其他 DDL。
 
+已设置 `DATABASE_URL` 后，可手动执行：
+
+```bash
+psql "$DATABASE_URL" -f spider/sql/create_tables.sql
+```
+
+若表缺失或结构不匹配，程序会报错，不会尝试修改数据库结构。
+
 ## 运行
 
 在仓库根目录执行：
@@ -23,6 +31,16 @@ python3 -m spider.main
 ```
 
 默认 `--interval-minutes 0`，只执行一次；使用 `--interval-minutes 10` 每十分钟执行一次。
+
+`--interval-minutes` 的规则如下：
+
+| 参数 | 行为 |
+| --- | --- |
+| 未传入或 `0` | 抓取并入库一次后退出。 |
+| 正数 | 启动后立即执行，之后按指定分钟数循环。 |
+| 负数 | 参数校验失败并退出。 |
+
+每个成功批次会在一个数据库事务中写入 1 条 `crawl_runs` 和 10 条 `gold_price_records`，随后同步写入本地 JSON 文件。
 
 默认输出到 `spider/output/results.json`。可指定不同的页面或输出路径：
 
