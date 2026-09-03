@@ -18,7 +18,7 @@ export function getPriceSummary(prices: DailyGoldPrice[]): PriceSummary {
   const high = Math.max(...prices.map((item) => item.price));
   const low = Math.min(...prices.map((item) => item.price));
   const previous = prices.length > 1 ? prices[prices.length - 2].price : latest;
-  const change = Number((latest - previous).toFixed(10));
+  const change = latest - previous;
   const changePercent = previous === 0
     ? 0
     : Number(((change / previous) * 100).toFixed(2));
