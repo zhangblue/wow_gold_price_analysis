@@ -2,7 +2,13 @@
 
 抓取指定 DD373 商品列表页中按页面顺序排列的前 10 条商品的第二条比例文本。定位规则对应用户指定 XPath 中的 `p[2]`：`/html/body/div[2]/div[3]/div/div[1]/div[2]/div[1]/div/div[3]/div/p[2]`。当前页面该节点的格式为 `1金=0.0124元`，程序提取等号后的 `0.0124`。
 
-仅使用 Python 3 标准库，无需安装第三方依赖。
+运行数据库持久化版本前安装依赖：
+
+```bash
+python3 -m pip install -r requirements.txt
+```
+
+并设置 `DATABASE_URL` 环境变量。该值不会写入代码或日志。
 
 ## 首次建表
 
@@ -15,6 +21,8 @@
 ```bash
 python3 -m spider.main
 ```
+
+默认 `--interval-minutes 0`，只执行一次；使用 `--interval-minutes 10` 每十分钟执行一次。
 
 默认输出到 `spider/output/results.json`。可指定不同的页面或输出路径：
 
