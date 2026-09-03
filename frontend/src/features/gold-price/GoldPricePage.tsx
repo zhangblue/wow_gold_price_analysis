@@ -3,6 +3,7 @@ import { getDailyGoldPrices } from './goldPriceRepository';
 import { validateDateRange } from './priceMetrics';
 import { DateRangeFilter } from './DateRangeFilter';
 import { PriceSummary } from './PriceSummary';
+import { PriceTrendChart } from './PriceTrendChart';
 import type { DailyGoldPrice } from './types';
 
 type LoadState = 'idle' | 'loading' | 'success' | 'empty' | 'error';
@@ -36,7 +37,7 @@ export function GoldPricePage() {
   }
 
   return (
-    <main>
+    <main className="gold-price-page">
       <h1>金币价格走势</h1>
       <DateRangeFilter
         startDate={startDate}
@@ -47,12 +48,20 @@ export function GoldPricePage() {
         onSubmit={queryPrices}
       />
       {validationMessage && <p role="alert">{validationMessage}</p>}
-      <section aria-label="最新价格">
+      <section aria-label="最新价格" className="gold-price-page__results">
         <h2>最新价格</h2>
         {loadState === 'loading' && <p>正在加载价格数据…</p>}
         {loadState === 'empty' && <p>该时间范围暂无价格数据</p>}
         {loadState === 'error' && <p role="alert">加载价格数据失败，请重试</p>}
-        {loadState === 'success' && prices.length > 0 && <PriceSummary prices={prices} />}
+        {loadState === 'success' && prices.length > 0 && (
+          <>
+            <PriceSummary prices={prices} />
+            <section aria-label="价格趋势" className="gold-price-page__trend">
+              <h2>价格趋势</h2>
+              <PriceTrendChart data={prices} />
+            </section>
+          </>
+        )}
       </section>
     </main>
   );

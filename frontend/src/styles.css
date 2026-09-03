@@ -1,3 +1,170 @@
 :root {
-  font-family: system-ui, sans-serif;
+  color: #342b1f;
+  background: #f4f0e8;
+  font-family: "PingFang SC", "Hiragino Sans GB", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  margin: 0;
+  background: #f4f0e8;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.gold-price-page {
+  width: min(100% - 32px, 920px);
+  margin: 48px auto;
+  padding: 32px;
+  border: 1px solid #e8dfd0;
+  border-radius: 20px;
+  background: #fffdf8;
+  box-shadow: 0 16px 40px rgb(85 61 29 / 8%);
+}
+
+.gold-price-page h1,
+.gold-price-page h2 {
+  color: #4a3520;
+}
+
+.gold-price-page h1 {
+  margin: 0 0 28px;
+  font-size: clamp(1.65rem, 3vw, 2.2rem);
+  letter-spacing: 0.04em;
+}
+
+.gold-price-page h2 {
+  margin: 0 0 18px;
+  font-size: 1.05rem;
+}
+
+.gold-price-page form {
+  display: flex;
+  align-items: end;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid #ece3d6;
+  border-radius: 14px;
+  background: #faf6ef;
+}
+
+.gold-price-page label {
+  display: grid;
+  flex: 1 1 180px;
+  gap: 8px;
+  color: #735d43;
+  font-size: 0.9rem;
+}
+
+.gold-price-page input {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid #d8cab8;
+  border-radius: 8px;
+  color: #3f2f1f;
+  background: #fffdf9;
+}
+
+.gold-price-page button {
+  min-height: 42px;
+  padding: 8px 18px;
+  border: 0;
+  border-radius: 8px;
+  color: #fffdf8;
+  background: #9b6a26;
+  cursor: pointer;
+}
+
+.gold-price-page button:hover:not(:disabled) {
+  background: #80541d;
+}
+
+.gold-price-page button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.gold-price-page [role="alert"] {
+  margin: 16px 0 0;
+  color: #a44732;
+}
+
+.gold-price-page__results {
+  margin-top: 28px;
+}
+
+.gold-price-page [aria-label="价格摘要"] {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.gold-price-page [aria-label="价格摘要"] p {
+  margin: 0;
+  padding: 16px;
+  border: 1px solid #eee3d4;
+  border-radius: 12px;
+  color: #634b31;
+  background: #fffaf1;
+}
+
+.gold-price-page__trend {
+  margin-top: 24px;
+  padding: 22px 16px 16px;
+  border: 1px solid #eee3d4;
+  border-radius: 14px;
+  background: #fffaf1;
+}
+
+.price-trend-chart {
+  min-width: 0;
+}
+
+.price-trend-chart__left-axis {
+  min-width: 0;
+  padding-left: 4px;
+}
+
+.price-trend-chart .recharts-cartesian-axis-tick-value {
+  fill: #806b52;
+  font-size: 12px;
+}
+
+.price-trend-chart .recharts-tooltip-wrapper {
+  outline: none;
+}
+
+@media (max-width: 640px) {
+  .gold-price-page {
+    width: min(100% - 20px, 920px);
+    margin: 16px auto;
+    padding: 20px;
+    border-radius: 14px;
+  }
+
+  .gold-price-page form {
+    align-items: stretch;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .gold-price-page form button {
+    width: 100%;
+  }
+
+  .gold-price-page [aria-label="价格摘要"] {
+    grid-template-columns: 1fr;
+  }
+
+  .gold-price-page__trend {
+    padding-inline: 8px;
+  }
 }

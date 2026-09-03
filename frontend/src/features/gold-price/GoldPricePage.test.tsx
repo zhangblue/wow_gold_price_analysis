@@ -40,6 +40,7 @@ test('shows the calculated summary after a query returns prices', async () => {
   await user.click(screen.getByRole('button', { name: '查询价格' }));
 
   expect(await screen.findByText('最新价格：0.0142')).toBeInTheDocument();
+  expect(screen.getByRole('img', { name: '金币日价格趋势图' })).toBeInTheDocument();
 });
 
 test('clears a successful summary when a later query has invalid dates', async () => {
