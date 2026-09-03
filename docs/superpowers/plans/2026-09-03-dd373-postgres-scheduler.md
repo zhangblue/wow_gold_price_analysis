@@ -13,6 +13,7 @@
 ## 文件结构
 
 - `requirements.txt`：Psycopg 3 二进制依赖。
+- `spider/sql/create_tables.sql`：供部署者首次手动执行的建表 SQL，爬虫不会执行它。
 - `spider/database.py`：成功/失败批次写入。
 - `spider/main.py`：`--interval-minutes`、单轮和循环调度。
 - `spider/tests/test_database.py`：迁移和持久化行为测试。

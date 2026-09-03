@@ -4,6 +4,10 @@
 
 仅使用 Python 3 标准库，无需安装第三方依赖。
 
+## 首次建表
+
+在首次运行数据库持久化版本前，由部署者手动执行 [create_tables.sql](sql/create_tables.sql) 创建 `crawl_runs` 和 `gold_price_records`。爬虫自身不会执行建表、迁移或其他 DDL。
+
 ## 运行
 
 在仓库根目录执行：
