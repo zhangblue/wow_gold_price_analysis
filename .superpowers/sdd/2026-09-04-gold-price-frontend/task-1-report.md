@@ -39,6 +39,7 @@ Tests  1 passed (1)
 - `npm test -- --run src/App.test.tsx`：通过，1 个测试文件、1 个测试。
 - `npm run build`：通过，`tsc -b` 和 `vite build` 均成功。
 - `git diff --check`：通过，无空白错误。
+- 备注：首次在 worktree 根目录执行 npm 命令时返回 `npm error enoent .../package.json`；随后切换到 `frontend` 目录按简报命令重跑并通过，该失败仅由工作目录错误造成。
 
 ## 修改文件
 
@@ -63,3 +64,21 @@ Tests  1 passed (1)
 ## 疑虑
 
 无。
+
+## 修复报告（第 1/5 轮）
+
+### 修改
+
+- 新增 `frontend/.gitignore`，忽略 `node_modules/`、`dist/` 和 `tsconfig.tsbuildinfo`，避免常规安装、测试和构建产物被 `git add frontend` 误暂存。
+
+### 验证
+
+- `git status --short --ignored frontend`：确认上述三类路径显示为 `!!`（ignored），源文件仍正常显示为待提交变更。
+- `npm test -- --run src/App.test.tsx`：`Test Files 1 passed (1)`、`Tests 1 passed (1)`。
+- `npm run build`：`tsc -b` 成功，Vite 构建成功（`✓ built`）。
+- `git diff --check`：通过，无空白错误。
+
+### 自审与疑虑
+
+- 仅修改工作区忽略规则，没有新增运行时行为，因此未新增行为测试。
+- 无疑虑。
