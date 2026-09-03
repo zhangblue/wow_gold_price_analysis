@@ -17,6 +17,8 @@ export function GoldPricePage() {
   async function queryPrices() {
     const validationError = validateDateRange(startDate, endDate);
     if (validationError) {
+      setPrices([]);
+      setLoadState('idle');
       setValidationMessage(validationError);
       return;
     }

@@ -42,6 +42,20 @@ test('shows the calculated summary after a query returns prices', async () => {
   expect(await screen.findByText('最新价格：0.0142')).toBeInTheDocument();
 });
 
+test('clears a successful summary when a later query has invalid dates', async () => {
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole('button', { name: '查询价格' }));
+  expect(await screen.findByText('最新价格：0.0142')).toBeInTheDocument();
+
+  await enterDateRange(user, '2026-08-31', '2026-08-01');
+  await user.click(screen.getByRole('button', { name: '查询价格' }));
+
+  expect(await screen.findByText('结束日期不能早于开始日期')).toBeInTheDocument();
+  expect(screen.queryByText('最新价格：0.0142')).not.toBeInTheDocument();
+});
+
 test('shows an empty-state message when a query returns no prices', async () => {
   const user = userEvent.setup();
   render(<App />);
