@@ -19,7 +19,14 @@ release/     生成的可运行发布包（不纳入版本控制）
 - Rust 工具链（Cargo）
 - 可访问的 PostgreSQL 数据库
 
-数据库需先执行 [spider/sql/create_tables.sql](/Users/zhangdi/works/workspace/github/gold_price_analysis/spider/sql/create_tables.sql) 建表，并由爬虫写入 `gold_price_records` 数据。
+首次部署需依次执行下列脚本：
+
+```bash
+psql "$DATABASE_URL" -f spider/sql/create_tables.sql
+psql "$DATABASE_URL" -f backend/sql/create_daily_gold_price_summaries.sql
+```
+
+爬虫只写入原始表 `gold_price_records`；后端页面的「汇总数据」按钮会刷新 `daily_gold_price_summaries`，按 `Asia/Shanghai` 自然日计算同日 `ratio` 的中位数。
 
 ## 编译发布包
 
@@ -62,6 +69,7 @@ DATABASE_URL=postgres://用户名:密码@主机:5432/数据库名
 
 - 页面：`/`
 - 价格接口：`GET /api/gold-prices?start_date=2026-08-01&end_date=2026-08-31`
+- 汇总接口：`POST /api/gold-prices/summary`
 
 接口按日期升序返回：
 
@@ -75,10 +83,13 @@ DATABASE_URL=postgres://用户名:密码@主机:5432/数据库名
 
 运行日志同时输出到终端，并写入 `release/logs/gold-price.log`。
 
+前端首次打开时，日期条件默认是浏览器当前月份的第一天至最后一天；可在页面中修改后查询。请先点击「汇总数据」刷新日汇总，再查询最新的价格趋势。
+
 ## 验证
 
 ```bash
 cargo test --manifest-path backend/Cargo.toml
 cd frontend && npm test -- --run
-cd .. && PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests/test_build_release.py -v
+cd .. && PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s spider/tests -v
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests/test_build_release.py -v
 ```
