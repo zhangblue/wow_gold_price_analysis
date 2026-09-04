@@ -1,0 +1,29 @@
+[package]
+name = "gold-price-backend"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "gold_price_backend"
+path = "src/lib.rs"
+
+[[bin]]
+name = "gold-price-backend"
+path = "src/main.rs"
+
+[dependencies]
+axum = "0.8"
+chrono = { version = "0.4", features = ["serde"] }
+clap = { version = "4", features = ["derive"] }
+dotenvy = "0.15"
+sea-orm = { version = "1.1", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros"] }
+serde = { version = "1", features = ["derive"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "fs"] }
+tracing = "0.1"
+tracing-appender = "0.2"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+tower-http = { version = "0.6", features = ["cors", "fs", "trace"] }
+
+[dev-dependencies]
+tempfile = "3"
+tower = { version = "0.5", features = ["util"] }
