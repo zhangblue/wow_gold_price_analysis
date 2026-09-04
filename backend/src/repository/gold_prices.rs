@@ -16,7 +16,7 @@ const TRUNCATE_DAILY_SUMMARIES_SQL: &str = "TRUNCATE TABLE daily_gold_price_summ
 
 const REFRESH_DAILY_SUMMARIES_SQL: &str = r#"
 INSERT INTO daily_gold_price_summaries (summary_date, median_ratio, source_record_count, aggregated_at)
-SELECT (fetched_at AT TIME ZONE 'Asia/Shanghai')::date,
+SELECT (fetched_at AT TIME ZONE 'Asia/Shanghai')::date AS summary_date,
        percentile_cont(0.5) WITHIN GROUP (ORDER BY ratio::double precision)::numeric(20, 10),
        COUNT(*)::integer, now()
 FROM gold_price_records
@@ -83,6 +83,10 @@ impl GoldPriceRepository {
         )
     }
 
+    pub fn refresh_daily_summaries_statement() -> Statement {
+        Statement::from_string(DbBackend::Postgres, REFRESH_DAILY_SUMMARIES_SQL)
+    }
+
     pub async fn daily_medians(
         &self,
         start: NaiveDate,
@@ -106,10 +110,7 @@ impl GoldPriceRepository {
             .map_err(|_| RepositoryError::Query)?;
 
         let rows = transaction
-            .query_all(Statement::from_string(
-                DbBackend::Postgres,
-                REFRESH_DAILY_SUMMARIES_SQL,
-            ))
+            .query_all(Self::refresh_daily_summaries_statement())
             .await
             .map_err(|_| RepositoryError::Query)?;
 
