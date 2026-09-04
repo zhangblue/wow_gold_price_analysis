@@ -8,9 +8,26 @@ import type { DailyGoldPrice } from './types';
 
 type LoadState = 'idle' | 'loading' | 'success' | 'empty' | 'error';
 
+function formatDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getCurrentMonthRange(now = new Date()) {
+  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  return {
+    startDate: formatDate(firstDay),
+    endDate: formatDate(lastDay),
+  };
+}
+
 export function GoldPricePage() {
-  const [startDate, setStartDate] = useState('2026-08-01');
-  const [endDate, setEndDate] = useState('2026-08-31');
+  const [{ startDate: initialStartDate, endDate: initialEndDate }] = useState(getCurrentMonthRange);
+  const [startDate, setStartDate] = useState(initialStartDate);
+  const [endDate, setEndDate] = useState(initialEndDate);
   const [loadState, setLoadState] = useState<LoadState>('idle');
   const [prices, setPrices] = useState<DailyGoldPrice[]>([]);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);

@@ -9,7 +9,7 @@ beforeEach(() => {
     'fetch',
     vi.fn((request: RequestInfo | URL) => {
       const url = new URL(request.toString(), 'http://localhost');
-      const data = url.searchParams.get('start_date') === '2026-09-01'
+      const data = url.searchParams.get('start_date') === '2026-10-01'
         ? []
         : [{ date: '2026-08-31', price: 0.0142 }];
       return Promise.resolve(new Response(JSON.stringify({ data }), { status: 200 }));
@@ -49,6 +49,19 @@ test('shows the latest price heading before a query', () => {
   render(<App />);
 
   expect(screen.getByRole('heading', { name: '最新价格' })).toBeInTheDocument();
+});
+
+test('defaults the date range to the current calendar month', () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-02-16T12:00:00+08:00'));
+  try {
+    render(<App />);
+
+    expect(screen.getByLabelText('开始日期')).toHaveValue('2026-02-01');
+    expect(screen.getByLabelText('结束日期')).toHaveValue('2026-02-28');
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
 test('shows the calculated summary after a query returns prices', async () => {
@@ -93,7 +106,7 @@ test('shows an empty-state message when a query returns no prices', async () => 
   const user = userEvent.setup();
   render(<App />);
 
-  await enterDateRange(user, '2026-09-01', '2026-09-02');
+  await enterDateRange(user, '2026-10-01', '2026-10-02');
   await user.click(screen.getByRole('button', { name: '查询价格' }));
 
   expect(await screen.findByText('该时间范围暂无价格数据')).toBeInTheDocument();
@@ -116,12 +129,14 @@ test('reloads the current dates after a successful summary', async () => {
     .mockResolvedValueOnce(new Response(JSON.stringify({ data: [{ date: '2026-08-01', price: 0.0121 }] })));
   vi.stubGlobal('fetch', fetchMock);
   render(<App />);
+  const startDate = (screen.getByLabelText('开始日期') as HTMLInputElement).value;
+  const endDate = (screen.getByLabelText('结束日期') as HTMLInputElement).value;
 
   await user.click(screen.getByRole('button', { name: '汇总数据' }));
 
   expect(await screen.findByText('汇总完成，共处理 2 天数据')).toBeInTheDocument();
   expect(await screen.findByText('最新价格：0.0121')).toBeInTheDocument();
-  expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/gold-prices?start_date=2026-08-01&end_date=2026-08-31');
+  expect(fetchMock).toHaveBeenNthCalledWith(2, `/api/gold-prices?start_date=${startDate}&end_date=${endDate}`);
 });
 
 test('disables both actions while a summary is in progress', async () => {
