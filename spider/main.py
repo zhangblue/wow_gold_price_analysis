@@ -66,7 +66,7 @@ def crawl(
 ) -> list[dict[str, object]]:
     """Fetch a page and return its first ten parsed product ratio records."""
     records = parse_result_html(fetch_html(url), limit=10)
-    timestamp = (captured_at or datetime.now(SHANGHAI)).astimezone(SHANGHAI).isoformat()
+    timestamp = (captured_at or datetime.now(SHANGHAI)).astimezone(SHANGHAI).replace(microsecond=0).isoformat()
     return [
         {
             "rank": rank,
