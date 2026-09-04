@@ -1,7 +1,10 @@
-use crate::{api::gold_prices::get_gold_prices, repository::gold_prices::GoldPriceReader};
+use crate::{
+    api::gold_prices::{get_gold_prices, refresh_gold_price_summaries},
+    repository::gold_prices::GoldPriceReader,
+};
 use axum::{
     http::{HeaderValue, Method},
-    routing::get,
+    routing::{get, post},
     Router,
 };
 use std::{path::PathBuf, sync::Arc};
@@ -38,10 +41,14 @@ where
     let static_files = ServeDir::new(dist_dir).not_found_service(ServeFile::new(index_file));
     let cors = CorsLayer::new()
         .allow_origin(development_origin)
-        .allow_methods([Method::GET]);
+        .allow_methods([Method::GET, Method::POST]);
 
     Router::new()
         .route("/api/gold-prices", get(get_gold_prices::<R>))
+        .route(
+            "/api/gold-prices/summary",
+            post(refresh_gold_price_summaries::<R>),
+        )
         .fallback_service(static_files)
         .layer(cors)
         .layer(

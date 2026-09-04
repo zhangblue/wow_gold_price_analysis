@@ -1,10 +1,11 @@
 use crate::{
     api::error::ApiError,
     app::AppState,
-    repository::gold_prices::{DailyGoldPrice, GoldPriceReader},
+    repository::gold_prices::{DailyGoldPrice, GoldPriceReader, SummaryRefresh},
 };
 use axum::{
     extract::{rejection::QueryRejection, Query, State},
+    http::StatusCode,
     Json,
 };
 use chrono::NaiveDate;
@@ -26,6 +27,11 @@ pub(crate) struct GoldPricesResponse {
 struct GoldPriceResponse {
     date: String,
     price: f64,
+}
+
+#[derive(Serialize)]
+pub(crate) struct SummaryRefreshError {
+    error: &'static str,
 }
 
 pub(crate) async fn get_gold_prices<R>(
@@ -53,6 +59,30 @@ where
     Ok(Json(GoldPricesResponse {
         data: prices.into_iter().map(GoldPriceResponse::from).collect(),
     }))
+}
+
+pub(crate) async fn refresh_gold_price_summaries<R>(
+    State(state): State<AppState<R>>,
+) -> Result<Json<SummaryRefresh>, (StatusCode, Json<SummaryRefreshError>)>
+where
+    R: GoldPriceReader,
+{
+    let refresh =
+        state
+            .repository()
+            .refresh_daily_summaries()
+            .await
+            .map_err(|repository_error| {
+                error!(error = %repository_error, "failed to refresh daily gold price summaries");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(SummaryRefreshError {
+                        error: "汇总数据失败，请重试",
+                    }),
+                )
+            })?;
+
+    Ok(Json(refresh))
 }
 
 impl From<DailyGoldPrice> for GoldPriceResponse {

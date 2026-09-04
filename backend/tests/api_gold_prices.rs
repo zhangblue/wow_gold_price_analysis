@@ -1,12 +1,15 @@
 use axum::{
     body::{to_bytes, Body},
-    http::{HeaderValue, Request, StatusCode},
+    http::{
+        header::{ACCESS_CONTROL_ALLOW_METHODS, ACCESS_CONTROL_REQUEST_METHOD, ORIGIN},
+        HeaderValue, Method, Request, StatusCode,
+    },
     Router,
 };
 use chrono::NaiveDate;
 use gold_price_backend::{
     app::build_app,
-    repository::gold_prices::{DailyGoldPrice, GoldPriceReader, RepositoryError},
+    repository::gold_prices::{DailyGoldPrice, GoldPriceReader, RepositoryError, SummaryRefresh},
 };
 use std::{future::Future, path::PathBuf};
 use tower::ServiceExt;
@@ -15,6 +18,7 @@ use tower::ServiceExt;
 struct FakeRepository {
     prices: Vec<DailyGoldPrice>,
     fails: bool,
+    summary_result: Result<SummaryRefresh, RepositoryError>,
 }
 
 impl GoldPriceReader for FakeRepository {
@@ -31,6 +35,13 @@ impl GoldPriceReader for FakeRepository {
 
         async move { result }
     }
+
+    fn refresh_daily_summaries(
+        &self,
+    ) -> impl Future<Output = Result<SummaryRefresh, RepositoryError>> + Send {
+        let result = self.summary_result.clone();
+        async move { result }
+    }
 }
 
 fn test_app(result: Result<Vec<DailyGoldPrice>, RepositoryError>) -> Router {
@@ -40,10 +51,89 @@ fn test_app(result: Result<Vec<DailyGoldPrice>, RepositoryError>) -> Router {
     };
 
     build_app(
-        FakeRepository { prices, fails },
+        FakeRepository {
+            prices,
+            fails,
+            summary_result: Err(RepositoryError::Query),
+        },
         PathBuf::from("missing-test-dist"),
         HeaderValue::from_static("http://localhost:5173"),
     )
+}
+
+fn test_app_with_summary(result: Result<SummaryRefresh, RepositoryError>) -> Router {
+    build_app(
+        FakeRepository {
+            prices: vec![],
+            fails: false,
+            summary_result: result,
+        },
+        PathBuf::from("missing-test-dist"),
+        HeaderValue::from_static("http://localhost:5173"),
+    )
+}
+
+#[tokio::test]
+async fn refreshes_daily_summaries() {
+    let response = test_app_with_summary(Ok(SummaryRefresh {
+        summary_count: 31,
+        aggregated_at: "2026-09-04T10:30:00+08:00".to_owned(),
+    }))
+    .oneshot(
+        Request::post("/api/gold-prices/summary")
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response_body(response).await,
+        r#"{"summary_count":31,"aggregated_at":"2026-09-04T10:30:00+08:00"}"#
+    );
+}
+
+#[tokio::test]
+async fn hides_summary_refresh_failures() {
+    let response = test_app_with_summary(Err(RepositoryError::Query))
+        .oneshot(
+            Request::post("/api/gold-prices/summary")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(
+        response_body(response).await,
+        r#"{"error":"汇总数据失败，请重试"}"#
+    );
+}
+
+#[tokio::test]
+async fn allows_summary_refresh_from_the_development_origin() {
+    let response = test_app_with_summary(Err(RepositoryError::Query))
+        .oneshot(
+            Request::builder()
+                .method(Method::OPTIONS)
+                .uri("/api/gold-prices/summary")
+                .header(ORIGIN, "http://localhost:5173")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "POST")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    let allowed_methods = response
+        .headers()
+        .get(ACCESS_CONTROL_ALLOW_METHODS)
+        .and_then(|header| header.to_str().ok())
+        .unwrap_or_default();
+
+    assert!(allowed_methods.split(',').any(|method| method == "POST"));
 }
 
 #[tokio::test]
