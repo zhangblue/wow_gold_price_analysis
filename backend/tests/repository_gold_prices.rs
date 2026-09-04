@@ -2,15 +2,15 @@ use chrono::NaiveDate;
 use gold_price_backend::repository::gold_prices::{DailyGoldPrice, GoldPriceRepository};
 
 #[test]
-fn builds_a_bounded_daily_median_query() {
-    let query = GoldPriceRepository::daily_median_statement(
-        NaiveDate::from_ymd_opt(2026, 8, 1).unwrap(),
-        NaiveDate::from_ymd_opt(2026, 8, 31).unwrap(),
-    );
-    let debug = format!("{query:?}");
+fn reads_date_range_from_daily_summary_table() {
+    let start = NaiveDate::from_ymd_opt(2026, 8, 1).unwrap();
+    let end = NaiveDate::from_ymd_opt(2026, 8, 31).unwrap();
+    let debug = format!("{:?}", GoldPriceRepository::daily_median_statement(start, end));
 
-    assert!(debug.contains("percentile_cont(0.5)"));
-    assert!(debug.contains("Asia/Shanghai"));
+    assert!(debug.contains("daily_gold_price_summaries"));
+    assert!(debug.contains("summary_date >= $1"));
+    assert!(debug.contains("summary_date <= $2"));
+    assert!(debug.contains("median_ratio::double precision AS price"));
 }
 
 #[test]

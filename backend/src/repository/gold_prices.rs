@@ -4,14 +4,10 @@ use serde::Serialize;
 use std::{fmt, future::Future};
 
 const DAILY_MEDIAN_SQL: &str = r#"
-SELECT
-  (fetched_at AT TIME ZONE 'Asia/Shanghai')::date AS date,
-  percentile_cont(0.5) WITHIN GROUP (ORDER BY ratio::double precision) AS price
-FROM gold_price_records
-WHERE (fetched_at AT TIME ZONE 'Asia/Shanghai')::date >= $1
-  AND (fetched_at AT TIME ZONE 'Asia/Shanghai')::date <= $2
-GROUP BY (fetched_at AT TIME ZONE 'Asia/Shanghai')::date
-ORDER BY date ASC
+SELECT summary_date AS date, median_ratio::double precision AS price
+FROM daily_gold_price_summaries
+WHERE summary_date >= $1 AND summary_date <= $2
+ORDER BY summary_date ASC
 "#;
 
 #[derive(Debug, Clone, PartialEq, Serialize, FromQueryResult)]
