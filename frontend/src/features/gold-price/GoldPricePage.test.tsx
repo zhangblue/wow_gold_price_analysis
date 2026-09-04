@@ -108,3 +108,46 @@ test('shows a retry message when the repository query fails', async () => {
 
   expect(await screen.findByText('加载价格数据失败，请重试')).toBeInTheDocument();
 });
+
+test('reloads the current dates after a successful summary', async () => {
+  const user = userEvent.setup();
+  const fetchMock = vi.fn()
+    .mockResolvedValueOnce(new Response(JSON.stringify({ summary_count: 2, aggregated_at: '2026-09-04T10:30:00+08:00' })))
+    .mockResolvedValueOnce(new Response(JSON.stringify({ data: [{ date: '2026-08-01', price: 0.0121 }] })));
+  vi.stubGlobal('fetch', fetchMock);
+  render(<App />);
+
+  await user.click(screen.getByRole('button', { name: '汇总数据' }));
+
+  expect(await screen.findByText('汇总完成，共处理 2 天数据')).toBeInTheDocument();
+  expect(await screen.findByText('最新价格：0.0121')).toBeInTheDocument();
+  expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/gold-prices?start_date=2026-08-01&end_date=2026-08-31');
+});
+
+test('disables both actions while a summary is in progress', async () => {
+  const user = userEvent.setup();
+  let resolveSummary: (value: Response) => void;
+  vi.stubGlobal('fetch', vi.fn().mockImplementation(() => new Promise<Response>((resolve) => {
+    resolveSummary = resolve;
+  })));
+  render(<App />);
+
+  await user.click(screen.getByRole('button', { name: '汇总数据' }));
+
+  expect(screen.getByRole('button', { name: '汇总中…' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: '查询价格' })).toBeDisabled();
+  resolveSummary!(new Response(JSON.stringify({ summary_count: 1, aggregated_at: '2026-09-04T10:30:00+08:00' })));
+});
+
+test('keeps the existing chart when a summary fails', async () => {
+  const user = userEvent.setup();
+  render(<App />);
+  await user.click(screen.getByRole('button', { name: '查询价格' }));
+  expect(await screen.findByRole('img', { name: '金币日价格趋势图' })).toBeInTheDocument();
+
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('failure', { status: 500 })));
+  await user.click(screen.getByRole('button', { name: '汇总数据' }));
+
+  expect(await screen.findByText('汇总数据失败，请重试')).toBeInTheDocument();
+  expect(screen.getByRole('img', { name: '金币日价格趋势图' })).toBeInTheDocument();
+});

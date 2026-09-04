@@ -17,3 +17,14 @@ export async function getDailyGoldPrices(
   const body: { data: DailyGoldPrice[] } = await response.json();
   return body.data;
 }
+
+export async function refreshDailyGoldPrices(): Promise<{ summaryCount: number; aggregatedAt: string }> {
+  const response = await fetch('/api/gold-prices/summary', { method: 'POST' });
+
+  if (!response.ok) {
+    throw new Error(`Failed to refresh gold prices: ${response.status}`);
+  }
+
+  const body: { summary_count: number; aggregated_at: string } = await response.json();
+  return { summaryCount: body.summary_count, aggregatedAt: body.aggregated_at };
+}
