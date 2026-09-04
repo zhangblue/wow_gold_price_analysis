@@ -1,8 +1,26 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { vi } from 'vitest';
+import { afterEach, beforeEach, vi } from 'vitest';
 import App from '../../App';
 import * as goldPriceRepository from './goldPriceRepository';
+
+beforeEach(() => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn((request: RequestInfo | URL) => {
+      const url = new URL(request.toString(), 'http://localhost');
+      const data = url.searchParams.get('start_date') === '2026-09-01'
+        ? []
+        : [{ date: '2026-08-31', price: 0.0142 }];
+      return Promise.resolve(new Response(JSON.stringify({ data }), { status: 200 }));
+    }),
+  );
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
 async function enterDateRange(
   user: ReturnType<typeof userEvent.setup>,
