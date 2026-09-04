@@ -41,6 +41,21 @@ class AssembleReleaseTests(unittest.TestCase):
 
         self.assertEqual(existing.read_text(), "DATABASE_URL=postgres://operator/production\n")
 
+    def test_assemble_release_replaces_stale_ui_files_without_touching_config(self):
+        stale_dist = self.release / "dist"
+        stale_dist.mkdir(parents=True)
+        (stale_dist / "removed-in-new-build.js").write_text("stale")
+        config = self.release / "config"
+        config.mkdir()
+        existing = config / ".env"
+        existing.write_text("DATABASE_URL=postgres://operator/production\n")
+
+        assemble_release(self.binary, self.ui, self.template, self.release)
+
+        self.assertFalse((stale_dist / "removed-in-new-build.js").exists())
+        self.assertTrue((stale_dist / "index.html").is_file())
+        self.assertEqual(existing.read_text(), "DATABASE_URL=postgres://operator/production\n")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -14,7 +14,10 @@ def assemble_release(
     """Copy build artifacts into a release directory without replacing local config."""
     release_dir.mkdir(parents=True, exist_ok=True)
     shutil.copy2(binary, release_dir / binary.name)
-    shutil.copytree(ui_dist, release_dir / "dist", dirs_exist_ok=True)
+    release_dist = release_dir / "dist"
+    if release_dist.exists():
+        shutil.rmtree(release_dist)
+    shutil.copytree(ui_dist, release_dist)
 
     config_dir = release_dir / "config"
     config_dir.mkdir(exist_ok=True)
