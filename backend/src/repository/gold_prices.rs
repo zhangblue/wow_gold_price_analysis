@@ -1,7 +1,7 @@
 use chrono::NaiveDate;
 use sea_orm::{DatabaseConnection, DbBackend, FromQueryResult, Statement};
 use serde::Serialize;
-use std::fmt;
+use std::{fmt, future::Future};
 
 const DAILY_MEDIAN_SQL: &str = r#"
 SELECT
@@ -39,6 +39,14 @@ impl fmt::Display for RepositoryError {
 
 impl std::error::Error for RepositoryError {}
 
+pub trait GoldPriceReader: Send + Sync + 'static {
+    fn daily_medians(
+        &self,
+        start: NaiveDate,
+        end: NaiveDate,
+    ) -> impl Future<Output = Result<Vec<DailyGoldPrice>, RepositoryError>> + Send;
+}
+
 impl GoldPriceRepository {
     pub fn new(db: DatabaseConnection) -> Self {
         Self { db }
@@ -61,5 +69,15 @@ impl GoldPriceRepository {
             .all(&self.db)
             .await
             .map_err(|_| RepositoryError::Query)
+    }
+}
+
+impl GoldPriceReader for GoldPriceRepository {
+    fn daily_medians(
+        &self,
+        start: NaiveDate,
+        end: NaiveDate,
+    ) -> impl Future<Output = Result<Vec<DailyGoldPrice>, RepositoryError>> + Send {
+        GoldPriceRepository::daily_medians(self, start, end)
     }
 }
