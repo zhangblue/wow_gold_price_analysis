@@ -82,6 +82,38 @@ async fn rejects_a_malformed_date() {
 }
 
 #[tokio::test]
+async fn rejects_a_missing_date() {
+    let response = test_app(Ok(vec![]))
+        .oneshot(
+            Request::builder()
+                .uri("/api/gold-prices?start_date=2026-08-01")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    assert_eq!(response_body(response).await, r#"{"error":"请求参数无效"}"#);
+}
+
+#[tokio::test]
+async fn returns_an_empty_data_array_when_no_prices_match() {
+    let response = test_app(Ok(vec![]))
+        .oneshot(
+            Request::builder()
+                .uri("/api/gold-prices?start_date=2026-08-01&end_date=2026-08-31")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(response_body(response).await, r#"{"data":[]}"#);
+}
+
+#[tokio::test]
 async fn returns_daily_prices_as_json() {
     let response = test_app(Ok(vec![DailyGoldPrice {
         date: NaiveDate::from_ymd_opt(2026, 8, 1).unwrap(),
